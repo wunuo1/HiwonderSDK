@@ -1,14 +1,20 @@
 #!/usr/bin/python3
 # encoding: utf-8
 import time
-# import pigpio
 import threading
 import Hobot.GPIO as GPIO
+
+import ctypes
+
+ll = ctypes.cdll.LoadLibrary
+lib = ll("/home/pi/TonyPi/HiwonderSDK/hiwonder/pwm_control.so")
+
 class PWM_Servo(object):
 
     # def __init__(self, pi, pin, freq = 50, min_width = 500, max_width=2500, deviation = 0, control_speed = False):
     def __init__(self, pin, freq = 50, min_width = 500, max_width=2500, deviation = 0, control_speed = False):
         # self.pi = pi
+        self.obj = lib.PWMControlNode_new()
         self.SPin = pin
         self.Position = 1500
         self.positionSet = self.Position
@@ -34,13 +40,13 @@ class PWM_Servo(object):
             # t.join()  
 
     def setPosition(self, pos, time = 0):
-        print("test")
         if pos < self.Min or pos > self.Max:
             return
         if time == 0:
             self.Position = pos
             self.positionSet = self.Position
-            PWM_Servo.set_servo_pulsewidth(self.SPin, self.Position + self.Deviation)
+            lib.PWM_control_new(self.obj, self.SPin, int(self.Position + self.Deviation))
+            # PWM_Servo.set_servo_pulsewidth(self.SPin, self.Position + self.Deviation)
             # self.pi.set_PWM_dutycycle(self.SPin, self.Position + self.Deviation)
         else:
             if time < 20:
@@ -67,9 +73,7 @@ class PWM_Servo(object):
 
     def updatePosition(self):
         while True:
-            # print("test2", self.posChanged)
             if self.posChanged is True:
-                # print("test2")
                 self.Time = self.Time_t
                 self.positionSet = self.positionSet_t
                 self.posChanged = False
@@ -79,7 +83,6 @@ class PWM_Servo(object):
                 self.servoRunning = True
 
             if self.servoRunning is True:
-                # print("test1")
                 self.incTimes -= 1
                 if  self.incTimes <= 0:
                     self.Position = self.positionSet
@@ -87,7 +90,8 @@ class PWM_Servo(object):
                 else:
                     self.Position = self.positionSet + int(self.positionInc * self.incTimes)
                 try:
-                    PWM_Servo.set_servo_pulsewidth(self.SPin, int(self.Position + self.Deviation))
+                    lib.PWM_control_new(self.obj, self.SPin, int(self.Position + self.Deviation))
+                    # PWM_Servo.set_servo_pulsewidth(self.SPin, int(self.Position + self.Deviation))
                     # self.pi.set_servo_pulsewidth(self.SPin, int(self.Position + self.Deviation))
                 # except:
                 #     pass
