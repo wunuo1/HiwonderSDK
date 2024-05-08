@@ -8,6 +8,7 @@ import sqlite3 as sql
 from . import Board
 
 #上位机编辑的动作调用库
+custom_action_groups = ["pick_up", "back_small_step"]
 
 runningAction = False
 stop_action = False
@@ -26,69 +27,76 @@ def stopActionGroup():
 __end = False
 __start = True
 current_status = ''
-def runActionGroup(actName, times=1, with_stand=False, lock_servos='', path="/home/pi/TonyPi/ActionGroups/"): 
-    global __end
-    global __start
-    global current_status
-    global stop_action_group
-    
-    temp = times
-    while True:
-        if temp != 0:
-            times -= 1
-        try:
-            if (actName != 'go_forward' and actName != 'go_forward_fast' and actName != 'go_forward_slow' and actName != 'back' and actName != 'back_fast') or stop_action_group:
-                if __end:
-                    __end = False
-                    if current_status == 'go':
-                        runAction('go_forward_end', lock_servos, path=path)
-                    else:
-                        runAction('back_end', lock_servos, path=path)
-                    #print('end2')
-                if stop_action_group:
-                    __end = False
-                    __start = True
-                    stop_action_group = False                        
-                    #print('stop_action_group')
-                    break
-                __start = True
-                if times < 0:
-                    __end = False
-                    __start = True
-                    stop_action_group = False 
-                    break
-                runAction(actName, lock_servos, path=path)
-            else:
-                if times < 0:
-                    #print('end1')
-                    if with_stand:
-                        if actName == 'go_forward' or actName == 'go_forward_fast' or actName == 'go_forward_slow':
+def runActionGroup(actName, times=1, with_stand=False, lock_servos='', path="/home/pi/TonyPi/ActionGroups/", custom_path="/home/pi/TonyPi/CustomActionGroups"): 
+    if actName in custom_action_groups:
+        py_path = os.path.join(custom_path, actName + ".py")
+        if os.path.exists(py_path):
+            exec(open(py_path).read())
+        else:
+            print("未能找到动作组文件:{},是否将动作组保存在目录:{}".format(actName, custom_path))
+    else:
+        global __end
+        global __start
+        global current_status
+        global stop_action_group
+        
+        temp = times
+        while True:
+            if temp != 0:
+                times -= 1
+            try:
+                if (actName != 'go_forward' and actName != 'go_forward_fast' and actName != 'go_forward_slow' and actName != 'back' and actName != 'back_fast') or stop_action_group:
+                    if __end:
+                        __end = False
+                        if current_status == 'go':
                             runAction('go_forward_end', lock_servos, path=path)
                         else:
                             runAction('back_end', lock_servos, path=path)
-                    break
-                if __start:
-                    __start = False
-                    __end = True
-                    #print('start')
-                    if actName == 'go_forward' or actName == 'go_forward_slow':                       
-                        runAction('go_forward_start', lock_servos, path=path)
-                        current_status = 'go'
-                    elif actName == 'go_forward_fast':
-                        runAction('go_forward_start_fast', lock_servos, path=path)
-                        current_status = 'go'
-                    elif actName == 'back':
-                        runAction('back_start', lock_servos, path=path)
-                        runAction('back', lock_servos, path=path)
-                        current_status = 'back'                    
-                    elif actName == 'back_fast':
-                        runAction('back_start', lock_servos, path=path)
-                        runAction('back_fast', lock_servos, path=path)
-                        current_status = 'back'
-                else:
+                        #print('end2')
+                    if stop_action_group:
+                        __end = False
+                        __start = True
+                        stop_action_group = False                        
+                        #print('stop_action_group')
+                        break
+                    __start = True
+                    if times < 0:
+                        __end = False
+                        __start = True
+                        stop_action_group = False 
+                        break
                     runAction(actName, lock_servos, path=path)
-        except BaseException as e:
-            print(e)
+                else:
+                    if times < 0:
+                        #print('end1')
+                        if with_stand:
+                            if actName == 'go_forward' or actName == 'go_forward_fast' or actName == 'go_forward_slow':
+                                runAction('go_forward_end', lock_servos, path=path)
+                            else:
+                                runAction('back_end', lock_servos, path=path)
+                        break
+                    if __start:
+                        __start = False
+                        __end = True
+                        #print('start')
+                        if actName == 'go_forward' or actName == 'go_forward_slow':                       
+                            runAction('go_forward_start', lock_servos, path=path)
+                            current_status = 'go'
+                        elif actName == 'go_forward_fast':
+                            runAction('go_forward_start_fast', lock_servos, path=path)
+                            current_status = 'go'
+                        elif actName == 'back':
+                            runAction('back_start', lock_servos, path=path)
+                            runAction('back', lock_servos, path=path)
+                            current_status = 'back'                    
+                        elif actName == 'back_fast':
+                            runAction('back_start', lock_servos, path=path)
+                            runAction('back_fast', lock_servos, path=path)
+                            current_status = 'back'
+                    else:
+                        runAction(actName, lock_servos, path=path)
+            except BaseException as e:
+                print(e)
 
 def runAction(actNum, lock_servos='', path="/home/pi/TonyPi/ActionGroups/"):
     '''
