@@ -8,7 +8,7 @@ import sqlite3 as sql
 from . import Board
 
 #上位机编辑的动作调用库
-custom_action_groups = ["pick_up", "back_small_step"]
+custom_action_groups = ["pick_up", "back_small_step", "left_move_hand_free", "right_move_hand_free", "go_forward_hand_free", "back_small_step_hand_free"]
 
 runningAction = False
 stop_action = False
